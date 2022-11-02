@@ -1,13 +1,18 @@
 require("dotenv").config();
 const express = require("express");
+const bodyParser = require("body-parser");
 const { Client } = require("linkedin-private-api");
 const app = express();
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.status(200).send("Hello World").end();
 });
 
-app.get("/api", async (req, res) => {
+app.post("/api", async (req, res) => {
+
   const client = new Client();
 
   try {
@@ -21,34 +26,62 @@ app.get("/api", async (req, res) => {
 
   //Search for profiles and send an invitation
   const peopleScroller = await client.search.searchPeople({
-    keywords: "Jose Ignacio Peralta",
+    keywords: req.body.person,
   });
 
-  const [{ profile: billGates }] = await peopleScroller.scrollNext();
+  const [{ profile: person1 }] = await peopleScroller.scrollNext();
 
-  console.log(billGates.firstName, billGates.lastName);
+  const [{ profile: person2 }] = await peopleScroller.scrollNext();
 
-  const [{ profile: billGates2 }] = await peopleScroller.scrollNext();
+  const [{ profile: person3 }] = await peopleScroller.scrollNext();
 
-  console.log(billGates2.firstName, billGates2.lastName);
+  const [{ profile: person4 }] = await peopleScroller.scrollNext();
 
-  const [{ profile: billGates3 }] = await peopleScroller.scrollNext();
+  res.json({person1, person2, person3, person4});
 
-  console.log(billGates3.firstName, billGates3.lastName);
+  res.status(200).send().end();
+});
 
-  const [{ profile: billGates4 }] = await peopleScroller.scrollNext();
+app.post("/message", async (req, res) => {
+  const client = new Client();
 
-  console.log(billGates4.firstName, billGates4.lastName);
+  try {
+    await client.login.userPass({
+      username: "gpti.grupo11@gmail.com",
+      password: "G1p1ti@@@",
+    });
+  } catch (e) {
+    console.log(e);
+  }
 
-  // const sentMessage = await client.message.sendMessage({
-  //   profileId: billGates.profileId,
-  //   text: "mensaje enviado desde mi api",
-  // });
+  const { profileId, text } = req.body;
 
-  // await client.invitation.sendInvitation({
-  //   profileId: billGates.profileId,
-  //   trackingId: billGates.trackingId,
-  // });
+  await client.message.sendMessage({
+    profileId: profileId,
+    text: text,
+  });
+
+  res.status(200).send("ok").end();
+});
+
+app.post("/invitation", async (req, res) => {
+  const client = new Client();
+
+  try {
+    await client.login.userPass({
+      username: "gpti.grupo11@gmail.com",
+      password: "G1p1ti@@@",
+    });
+  } catch (e) {
+    console.log(e);
+  }
+
+  const { profileId, trackingId } = req.body;
+
+  await client.invitation.sendInvitation({
+    profileId: profileId,
+    trackingId: trackingId,
+  });
 
   res.status(200).send("ok").end();
 });
